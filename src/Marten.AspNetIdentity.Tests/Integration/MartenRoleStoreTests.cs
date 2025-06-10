@@ -96,6 +96,33 @@ namespace Marten.AspNetIdentity.Tests.Integration
 			actualRole.ShouldNotBeNull();
 			actualRole.Name.ShouldBe(expectedRole.Name);
 		}
+		
+		[Fact]
+		public async Task DeleteAsync()
+		{
+			// given
+			string roleName = "super root admin";
+			var expectedRole = new IdentityRole();
+			expectedRole.Name = roleName;
+			expectedRole.NormalizedName = roleName;
+			await _roleStore.CreateAsync(expectedRole, CancellationToken.None);
+
+			// when
+			IdentityRole actualRole = await _roleStore.FindByNameAsync(roleName, CancellationToken.None);
+
+			// then
+			actualRole.ShouldNotBeNull();
+			actualRole.Name.ShouldBe(expectedRole.Name);
+			
+			// when
+			IdentityResult result = await _roleStore.DeleteAsync(actualRole, CancellationToken.None);
+			
+			// then
+			result.ShouldBe(IdentityResult.Success);
+			IdentityRole newRole = await _roleStore.FindByIdAsync(actualRole.Id, CancellationToken.None);
+			newRole.ShouldBe(null);
+;
+		}
 
 		[Fact]
 		public async Task FindByIdAsync()

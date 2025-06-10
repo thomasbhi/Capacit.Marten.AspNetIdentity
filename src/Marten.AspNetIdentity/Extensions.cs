@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Security.Claims;
+using JasperFx;
+using JasperFx.MultiTenancy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -48,6 +50,9 @@ namespace Marten.AspNetIdentity
 		{
 			var documentStore = DocumentStore.For(options =>
 			{
+				options.TenantIdStyle = TenantIdStyle.ForceLowerCase;
+				options.AutoCreateSchemaObjects = AutoCreate.All;
+				
 				options.CreateDatabasesForTenants(c =>
 				{
 					c.ForTenant()
@@ -63,8 +68,10 @@ namespace Marten.AspNetIdentity
 
 				options.DatabaseSchemaName = databaseSchemaName;
 				options.Connection(connectionString);
-				options.Schema.For<IdentityRole>().Index(x => x.Id);
-				options.Schema.For<IdentityUser>().Index(x => x.Id);
+				// options.Schema.For<IdentityUser>().Index(user => user.Id); Indexing seems to not correctly cast right now and is thus avoided
+				// options.Schema.For<IdentityRole>().Index(role => role.Id);
+				options.Schema.For<IdentityUser>();
+				options.Schema.For<IdentityRole>();
 			});
 
 			return documentStore;
