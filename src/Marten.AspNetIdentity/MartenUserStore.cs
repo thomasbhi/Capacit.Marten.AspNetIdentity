@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
@@ -34,12 +36,12 @@ namespace Marten.AspNetIdentity
 			}
 		}
 
-		public void Wipe()
+		public async Task Wipe()
 		{
-			using (IDocumentSession session = _documentStore.OpenSession())
+			using (IDocumentSession session = CreateSession())
 			{
 				session.DeleteWhere<TUser>(x => true);
-				session.SaveChanges();
+				await session.SaveChangesAsync();
 			}
 		}
 
@@ -82,7 +84,7 @@ namespace Marten.AspNetIdentity
 
 			try
 			{
-				using (IDocumentSession session = _documentStore.OpenSession())
+				using (IDocumentSession session = CreateSession())
 				{
 					session.Store(user);
 					await session.SaveChangesAsync(cancellationToken);
@@ -100,7 +102,7 @@ namespace Marten.AspNetIdentity
 		{
 			try
 			{
-				using (IDocumentSession session = _documentStore.OpenSession())
+				using (IDocumentSession session = CreateSession())
 				{
 					session.Update(user);
 					await session.SaveChangesAsync(cancellationToken);
@@ -118,7 +120,7 @@ namespace Marten.AspNetIdentity
 		{
 			try
 			{
-				using (IDocumentSession session = _documentStore.OpenSession())
+				using (IDocumentSession session = CreateSession())
 				{
 					session.Delete(user);
 					await session.SaveChangesAsync(cancellationToken);
@@ -316,7 +318,7 @@ namespace Marten.AspNetIdentity
 
 				user.RoleClaims = userRoleClaims;
 
-				using (IDocumentSession session = _documentStore.OpenSession())
+				using (IDocumentSession session = CreateSession())
 				{
 					session.Store(user);
 					await session.SaveChangesAsync(cancellationToken);
@@ -380,6 +382,15 @@ namespace Marten.AspNetIdentity
 
 				return readonlyList.ToList();
 			}
+		}
+
+		private IDocumentSession CreateSession()
+		{
+			return _documentStore.OpenSession(new SessionOptions
+			{
+				Tracking = DocumentTracking.IdentityOnly,
+				IsolationLevel = IsolationLevel.ReadCommitted
+			});
 		}
 	}
 }

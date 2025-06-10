@@ -1,7 +1,9 @@
 using System;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
@@ -36,7 +38,7 @@ namespace Marten.AspNetIdentity
 		{
 			try
 			{
-				using (IDocumentSession session = _documentStore.OpenSession())
+				using (IDocumentSession session = CreateSession())
 				{
 					session.Store(role);
 					await session.SaveChangesAsync(cancellationToken);
@@ -55,7 +57,7 @@ namespace Marten.AspNetIdentity
 		{
 			try
 			{
-				using (IDocumentSession session = _documentStore.OpenSession())
+				using (IDocumentSession session = CreateSession())
 				{
 					session.Update(role);
 					await session.SaveChangesAsync(cancellationToken);
@@ -74,7 +76,7 @@ namespace Marten.AspNetIdentity
 		{
 			try
 			{
-				using (IDocumentSession session = _documentStore.OpenSession())
+				using (IDocumentSession session = CreateSession())
 				{
 					session.Delete(role);
 					await session.SaveChangesAsync(cancellationToken);
@@ -132,6 +134,15 @@ namespace Marten.AspNetIdentity
 				var actualRole = await session.Query<TRole>().FirstOrDefaultAsync(x => x.NormalizedName == normalizedRoleName, cancellationToken);
 				return actualRole;
 			}
+		}
+
+		private IDocumentSession CreateSession()
+		{
+			return _documentStore.OpenSession(new SessionOptions
+			{
+				Tracking = DocumentTracking.IdentityOnly,
+				IsolationLevel = IsolationLevel.ReadCommitted
+			});
 		}
 	}
 }
